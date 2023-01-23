@@ -1,17 +1,25 @@
 import { request } from "@/utils/request";
-import { notFoundError, requestError } from "@/errors";
+import { notFoundError } from "@/errors";
 import addressRepository, { CreateAddressParams } from "@/repositories/address-repository";
 import enrollmentRepository, { CreateEnrollmentParams } from "@/repositories/enrollment-repository";
 import { exclude } from "@/utils/prisma-utils";
 import { Address, Enrollment } from "@prisma/client";
 
+type AddressType = {
+  logradouro: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+};
+
 async function getAddressFromCEP(cep: string) {
-  const result = await request.get(`https://viacep.com.br/ws/${cep}/json/`); 
+  const result = await request.get(`https://viacep.com.br/ws/${cep}/json/`);
   if (!result.data || result.data.erro) {
     throw notFoundError();
   }
-  const { bairro, localidade: cidade, complemento, logradouro, uf } = result.data;
-  return { logradouro, complemento, bairro, cidade, uf };
+  const address = result.data as AddressType;
+  return address;
 }
 
 async function getOneWithAddressByUserId(userId: number): Promise<GetOneWithAddressByUserIdResult> {
@@ -64,7 +72,7 @@ export type CreateOrUpdateEnrollmentWithAddress = CreateEnrollmentParams & {
 const enrollmentsService = {
   getOneWithAddressByUserId,
   createOrUpdateEnrollmentWithAddress,
-  getAddressFromCEP
+  getAddressFromCEP,
 };
 
 export default enrollmentsService;
